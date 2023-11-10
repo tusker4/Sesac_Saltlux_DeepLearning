@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    {% include "public/head.html"%}
+    <!-- 실시간 통신 담당 프론트쪽 socket.io 라이브러리-->
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"
+        integrity="sha384-c79GN5VsunZvi+Q/WObgk2in0CbZsHnjEqvFxC5DxHn9lTfNce2WW6h2pH6u/kF+"
+        crossorigin="anonymous"></script>
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div class="wrapper">
+        {% include "public/navibar.html"%}
+        {% include "public/sidebar.html"%}
+        {% include "pages/chatbot_detail.html"%}
+        {% include "public/footer.html"%}
+    </div>
+
+    {% include "public/js.html"%}
+    <script>
+        // 서버 접속 url 획득 (socket.io => http:// , websocket => ws:)
+        let url = `http://${document.domain}:${location.port}`
+        console.log(url)
+
+        // 서버접속
+        const socket = io(url)
+        // 연결이 됬음을 알려주는 이벤트가 발생되면
+        // 이벤트명 사전에 정의 된 것들 , 사용자 정의 이벤트(서버와 약속된 통신을 진행)
+        // -> (서버와 약속된 통신을 진행 -> TR, 통신프로토콜)
+        socket.on('connect', () => {
+            console.log('서버에 접속되었다.')
+
+        })
+
+
+        // 입력창
+        $('#chat_input').on('keypress', e => {
+            if (e.keyCode == 13) {
+                addMessage()
+            }
+        })
+        // SEND 버튼
+        $('#chat_send').on('click', function (e) {
+            sendMessage()
+        })
+
+        function sendMessage() {
+            // 1. 메시지 획득
+            msg = $('#chat_input').val()
+            // 2. 입력창 비우기
+            $('#chat_input').val('')
+            // 3. 채팅창에 입력 내용 채우기
+            addMessage('me', msg)
+            // 4. 서버로 소켓을 통해서 메세지를 전송한다
+            // 이벤트명(서버와 클라이언트 간 서로 약속한 이벤트, 통신프로토콜), 파라미터(전송데이터)
+            // js의 객체 {} 에 담아 보낸다. => json => 파이썬 dict
+            socket.emit('cTos_send_msg', { chatMsg: msg, dumy: "hello" })
+        
+        }
+        function addMessage(user = 'me', msg) {
+            let html = null
+            if (user === 'me') {
+                // 메시지는 오른쪽에 붙어서 표기
+                html = `
+                    <div class="direct-chat-msg right">
+                        <div class="direct-chat-infos clearfix">
+                            <span class="direct-chat-name float-right">새싹</span>
+                            <span class="direct-chat-timestamp float-left">${new Date()}</span>
+                        </div>
+                        <img class="direct-chat-img" src="/static/dist/img/user3-128x128.jpg"
+                            alt="message user image">
+                        <div class="direct-chat-text">
+                            ${msg}
+                        </div>
+                    </div>
+                `
+            } else {
+                // 메시지는 왼쪽에 붙어서 표기
+                html = `
+                    <div class="direct-chat-msg">
+                        <div class="direct-chat-infos clearfix">
+                            <span class="direct-chat-name float-left">AI</span>
+                            <span class="direct-chat-timestamp float-right">${new Date()}</span>
+                        </div>
+
+                        <img class="direct-chat-img" src="/static/dist/img/user1-128x128.jpg"
+                            alt="message user image">
+
+                        <div class="direct-chat-text">
+                            ${msg}
+                        </div>
+
+                    </div>
+                `
+            }
+            $('#chat_board').append(html)
+        }
+
+    </script>
+</body>
+
+</html>
